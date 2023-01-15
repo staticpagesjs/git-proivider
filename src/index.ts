@@ -7,3 +7,4 @@ export * from './name-by-header.js';
 export * from './name-by-url.js';
 export * from './reader.js';
 export * from './writer.js';
+export * from './fs.js';
