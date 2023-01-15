@@ -322,6 +322,10 @@ export class Git {
 		}
 	}
 
+	unsetEnv(k: keyof GitEnv) {
+		delete this._env[k];
+	}
+
 	setEnv(k: keyof GitEnv, v: string) {
 		if (typeof v !== 'string') {
 			throw new Error('Environment variable values can be strings only.');
