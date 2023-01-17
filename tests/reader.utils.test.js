@@ -3,6 +3,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
+test('TODO', async () => {
+	// implement tests
+	expect(true).toEqual(true);
+});
+
 // const inputDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'input');
 
 // test('findAll() reads everything and possible to filter', async () => {
