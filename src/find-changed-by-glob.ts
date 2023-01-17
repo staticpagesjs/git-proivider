@@ -37,7 +37,9 @@ export async function* findChangedByGlob({
 	if (ncwd.startsWith('/')) ncwd = ncwd.substring(1);
 
 	const git = new Git({
-		GIT_DIR: repository,
+		env: {
+			GIT_DIR: repository,
+		}
 	});
 
 	const mmOpts = { ignore };
@@ -47,7 +49,7 @@ export async function* findChangedByGlob({
 	// get file list since previous commit or all files if no previous commit
 	let files;
 	if (pastCommit) {
-		files = git.treeSinceCommit(pastCommit, ncwd, branch);
+		files = git.changedFiles(pastCommit, ncwd, branch);
 	} else {
 		files = git.tree(ncwd, branch);
 	}

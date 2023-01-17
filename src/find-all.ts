@@ -1,6 +1,6 @@
 import { normalize, relative } from 'path/posix';
 
-import  { Git } from './git.js';
+import { Git } from './git.js';
 
 export namespace findAll {
 	export type Options = {
@@ -27,7 +27,9 @@ export function* findAll({
 	if (ncwd.startsWith('/')) ncwd = ncwd.substring(1);
 
 	const git = new Git({
-		GIT_DIR: repository,
+		env: {
+			GIT_DIR: repository,
+		}
 	});
 
 	const files = git.tree(ncwd, branch).map(x => relative(ncwd, x));

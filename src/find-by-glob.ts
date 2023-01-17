@@ -1,7 +1,7 @@
 import { normalize, relative } from 'path/posix';
 import micromatch from 'micromatch';
 
-import  { Git } from './git.js';
+import { Git } from './git.js';
 
 export namespace findByGlob {
 	export type Options = {
@@ -32,7 +32,9 @@ export function* findByGlob({
 	if (ncwd.startsWith('/')) ncwd = ncwd.substring(1);
 
 	const git = new Git({
-		GIT_DIR: repository,
+		env: {
+			GIT_DIR: repository,
+		}
 	});
 
 	const mmOpts = { ignore };

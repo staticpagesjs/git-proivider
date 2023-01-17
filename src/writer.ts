@@ -35,7 +35,7 @@ export function writer<T extends Record<string, unknown>>({
 	commiterEmail = authorEmail,
 	message = 'No commit message.',
 	cwd = 'dist',
-	namer = [nameByUrl, nameByHeader, () => { throw new Error('Naming error: could not create an output filename based on .url or .header.path properties.') }],
+	namer = [nameByUrl, nameByHeader, () => { throw new Error('Naming error: could not create an output filename based on .url or .header.path properties.'); }],
 	renderer,
 	onError = error => { console.error(error); },
 }: writer.Options<T>) {
@@ -54,11 +54,13 @@ export function writer<T extends Record<string, unknown>>({
 	if (typeof onError !== 'function') throw new Error('Argument type mismatch, \'onError\' expects a function.');
 
 	const git = new Git({
-		GIT_DIR: repository,
-		GIT_AUTHOR_NAME: authorName,
-		GIT_AUTHOR_EMAIL: authorEmail,
-		GIT_COMMITTER_NAME: commiterName,
-		GIT_COMMITTER_EMAIL: commiterEmail,
+		env: {
+			GIT_DIR: repository,
+			GIT_AUTHOR_NAME: authorName,
+			GIT_AUTHOR_EMAIL: authorEmail,
+			GIT_COMMITTER_NAME: commiterName,
+			GIT_COMMITTER_EMAIL: commiterEmail,
+		}
 	});
 
 	let parentCommit = git.currentCommit(branch);
@@ -79,7 +81,7 @@ export function writer<T extends Record<string, unknown>>({
 			const rendered = await renderer(data);
 			if (!rendered) return;
 
-			git.addFile(path.join(cwd, outputPath), rendered);
+			git.writeFile(path.join(cwd, outputPath), rendered);
 			if (!isFileAdded) isFileAdded = true;
 		} catch (error) {
 			onError(error);

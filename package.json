@@ -46,6 +46,10 @@
     "./name-by-url": {
       "require": "./cjs/name-by-url.js",
       "default": "./esm/name-by-url.js"
+    },
+    "./git": {
+      "require": "./cjs/git.js",
+      "default": "./esm/git.js"
     }
   },
   "scripts": {

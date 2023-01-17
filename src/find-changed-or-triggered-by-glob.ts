@@ -29,7 +29,7 @@ const getTriggered = (git: Git, ref: string, tcwd: string, pastCommit: string | 
 
 	let files;
 	if (pastCommit) {
-		files = git.treeSinceCommit(pastCommit, ntcwd, ref);
+		files = git.changedFiles(pastCommit, ntcwd, ref);
 	} else {
 		files = git.tree(ntcwd, ref);
 	}
@@ -78,7 +78,9 @@ export async function* findChangedOrTriggeredByGlob({
 	if (ncwd.startsWith('/')) ncwd = ncwd.substring(1);
 
 	const git = new Git({
-		GIT_DIR: repository,
+		env: {
+			GIT_DIR: repository,
+		}
 	});
 
 	const mmOpts = { ignore };
@@ -87,7 +89,7 @@ export async function* findChangedOrTriggeredByGlob({
 
 	// get file list since previous commit or all files if no previous commit
 	if (pastCommit) {
-		const files = git.treeSinceCommit(pastCommit, ncwd, branch)
+		const files = git.changedFiles(pastCommit, ncwd, branch)
 			.map(x => relative(ncwd, x));
 
 		const triggeredPatterns = getTriggered(git, branch, triggersSourceCwd, pastCommit, triggers);

@@ -40,13 +40,15 @@ export async function* reader<T extends Record<string, unknown>, E extends Recor
 	if (typeof branch !== 'string') throw new Error('Argument type mismatch, \'branch\' expects a string.');
 
 	const git = new Git({
-		GIT_DIR: repository,
+		env: {
+			GIT_DIR: repository,
+		}
 	});
 
 	for await (const file of files) {
 		try {
 			yield await parser(
-				git.getFile(normalize(join(cwd, file)), branch),
+				git.readFile(normalize(join(cwd, file)), branch),
 				file,
 				optionsWithDefaults
 			);
