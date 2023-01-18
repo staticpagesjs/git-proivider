@@ -3,6 +3,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 
 const repository = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const branch = 'master';
 const cwd = 'tests/input';
 
 test('it reads the specified files and parses its contents', async () => {
@@ -10,8 +11,9 @@ test('it reads the specified files and parses its contents', async () => {
 
 	const asyncIterable = reader({
 		repository,
+		branch,
 		cwd,
-		branch: 'develop',
+		branch: 'master',
 		pattern: ['file1.txt', 'file2.txt'],
 		parser(body) {
 			return { body: 'hello ' + body.toString().trim() };

@@ -1,134 +1,126 @@
 import { findAll, findByGlob, findChangedByGlob, findChangedOrTriggeredByGlob, parseHeader } from '../esm/index.js';
-import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
-test('TODO', async () => {
-	// implement tests
-	expect(true).toEqual(true);
+const repository = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const branch = 'master';
+const cwd = 'tests/input';
+
+test('findAll() reads everything and possible to filter', async () => {
+	const expected = ['file1.txt', 'file2.txt', 'folder/file3.txt'];
+
+	const output = [...findAll({
+		repository,
+		branch,
+		cwd,
+		filter: x => !x.includes('skip.txt'),
+	})];
+
+	output.sort((a, b) => a.localeCompare(b));
+
+	expect(output).toEqual(expected);
 });
 
-// const inputDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'input');
+test('findByGlob() reads by pattern and possible to filter and ignore', async () => {
+	const expected = ['file1.txt'];
 
-// test('findAll() reads everything and possible to filter', async () => {
-// 	const expected = ['file1.txt', 'file2.txt', 'folder/file3.txt'];
+	const output = [...findByGlob({
+		repository,
+		branch,
+		cwd,
+		pattern: '*.txt',
+		ignore: 'skip.txt',
+		filter: x => !x.endsWith('2.txt'),
+	})];
 
-// 	const output = [...findAll({
-// 		cwd: inputDir,
-// 		filter: x => !x.includes('skip.txt'),
-// 	})];
+	output.sort((a, b) => a.localeCompare(b));
 
-// 	output.sort((a, b) => a.localeCompare(b));
+	expect(output).toEqual(expected);
+});
 
-// 	expect(output).toEqual(expected);
-// });
+test('findChangedByGlob() filters newer files only', async () => {
+	const expected = []; // TODO: make test files appear in git history in a separate commit after initial commit.
 
-// test('findByGlob() reads by pattern and possible to filter and ignore', async () => {
-// 	const expected = ['file1.txt'];
+	const last = '068ed566dbbc4f45afbecd45ac2d7bf1d0cc364b'; // the initial commit hash
 
-// 	const output = [...findByGlob({
-// 		cwd: inputDir,
-// 		pattern: '*.txt',
-// 		ignore: 'skip.txt',
-// 		filter: x => !x.endsWith('2.txt'),
-// 	})];
+	const incremental = {
+		last: null,
+		get() { return last; },
+		set(d) { incremental.last = d; }
+	};
 
-// 	output.sort((a, b) => a.localeCompare(b));
+	const asyncIterable = findChangedByGlob({
+		repository,
+		branch,
+		cwd,
+		pattern: '*.txt',
+		ignore: 'skip.txt',
+		storage: incremental,
+	});
 
-// 	expect(output).toEqual(expected);
-// });
+	const output = [];
+	for await (const item of asyncIterable) {
+		output.push(item);
+	}
 
-// test('findChangedByGlob() filters newer files only', async () => {
-// 	const expected = ['file1.txt'];
+	output.sort((a, b) => a.localeCompare(b));
 
-// 	const now = new Date();
-// 	const then = new Date();
-// 	then.setFullYear(then.getFullYear() - 1);
-// 	const last = new Date();
-// 	last.setMonth(last.getMonth() - 6);
+	expect(output).toEqual(expected);
+	expect(incremental.last).not.toBeNull();
+});
 
-// 	const incremental = {
-// 		date: null,
-// 		get() { return last; },
-// 		set(d) { incremental.date = d; }
-// 	};
+test('findChangedOrTriggeredByGlob() filters newer files plus triggered ones only', async () => {
+	const expected = []; // TODO: make test files appear in git history in a separate commit after initial commit.
 
-// 	fs.utimesSync(inputDir + '/file1.txt', now, now);
-// 	fs.utimesSync(inputDir + '/file2.txt', then, then);
+	const last = '068ed566dbbc4f45afbecd45ac2d7bf1d0cc364b'; // the initial commit hash
 
-// 	const asyncIterable = findChangedByGlob({
-// 		cwd: inputDir,
-// 		pattern: '*.txt',
-// 		ignore: 'skip.txt',
-// 		storage: incremental,
-// 	});
+	const incremental = {
+		last: null,
+		get() { return last; },
+		set(d) { incremental.last = d; }
+	};
 
-// 	const output = [];
-// 	for await (const item of asyncIterable) {
-// 		output.push(item);
-// 	}
+	const asyncIterable = findChangedOrTriggeredByGlob({
+		repository,
+		branch,
+		cwd,
+		pattern: '**/*.txt',
+		ignore: 'skip.txt',
+		storage: incremental,
+		triggers: {
+			'*1.txt': 'folder/*'
+		}
+	});
 
-// 	output.sort((a, b) => a.localeCompare(b));
+	const output = [];
+	for await (const item of asyncIterable) {
+		output.push(item);
+	}
 
-// 	expect(output).toEqual(expected);
-// 	expect(incremental.date).not.toBeNull();
-// });
+	output.sort((a, b) => a.localeCompare(b));
 
-// test('findChangedOrTriggeredByGlob() filters newer files plus triggered ones only', async () => {
-// 	const expected = ['file1.txt', 'folder/file3.txt'];
+	expect(output).toEqual(expected);
+	expect(incremental.last).not.toBeNull();
+});
 
-// 	const now = new Date();
-// 	const then = new Date();
-// 	then.setFullYear(then.getFullYear() - 1);
-// 	const last = new Date();
-// 	last.setMonth(last.getMonth() - 6);
+test('parseHeader() makes a standard page object with header', async () => {
+	const expected = {
+		header: {
+			repository: repository.replace(/\\/g, '/'),
+			branch,
+			cwd,
+			path: 'folder/file3.txt',
+			dirname: 'folder',
+			basename: 'file3',
+			extname: '.txt'
+		},
+		body: 'hello world'
+	};
 
-// 	const incremental = {
-// 		date: null,
-// 		get() { return last; },
-// 		set(d) { incremental.date = d; }
-// 	};
+	const parser = parseHeader(b => JSON.parse(b.toString()));
 
-// 	fs.utimesSync(inputDir + '/file1.txt', now, now);
-// 	fs.utimesSync(inputDir + '/file2.txt', then, then);
-// 	fs.utimesSync(inputDir + '/folder/file3.txt', then, then);
+	const output = parser(Buffer.from('{"body":"hello world"}'), 'folder/file3.txt', { cwd, branch, repository });
 
-// 	const asyncIterable = findChangedOrTriggeredByGlob({
-// 		cwd: inputDir,
-// 		pattern: '**/*.txt',
-// 		ignore: 'skip.txt',
-// 		storage: incremental,
-// 		triggers: {
-// 			'*1.txt': 'folder/*'
-// 		}
-// 	});
-
-// 	const output = [];
-// 	for await (const item of asyncIterable) {
-// 		output.push(item);
-// 	}
-
-// 	output.sort((a, b) => a.localeCompare(b));
-
-// 	expect(output).toEqual(expected);
-// 	expect(incremental.date).not.toBeNull();
-// });
-
-// test('parseHeader() makes a standard page object with header', async () => {
-// 	const expected = {
-// 		header: {
-// 			cwd: inputDir.replace(/\\/g, '/'),
-// 			path: 'folder/file3.txt',
-// 			dirname: 'folder',
-// 			basename: 'file3',
-// 			extname: '.txt'
-// 		},
-// 		body: 'hello world'
-// 	};
-
-// 	const parser = parseHeader(b => JSON.parse(b.toString()));
-
-// 	const output = parser(Buffer.from('{"body":"hello world"}'), 'folder/file3.txt', { cwd: inputDir });
-
-// 	expect(output).toEqual(expected);
-// });
+	expect(output).toMatchObject(expected);
+	expect(output.header.latestCommit).toBeDefined();
+});
