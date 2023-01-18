@@ -14,6 +14,13 @@ type Data<T> = {
 			commiterName: string;
 			commiterEmail: string;
 			committerDate: string;
+			message: string;
+			changes: {
+				status: string,
+				path: string,
+				srcPath?: string,
+				similarity?: number,
+			};
 		};
 		repository: string;
 		branch: string;
@@ -73,10 +80,10 @@ export function parseHeader(bodyParser: { (body: any, file: string, options: any
 			const { header, ...payload } = await (bodyParser(body, file, options) as Promise<any>);
 			return {
 				header: {
-					commit: getCommit(options),
 					repository: path.resolve(options.repository ?? '.').replace(/\\/g, '/'),
 					branch: options.branch,
 					cwd: options.cwd,
+					latestCommit: getCommit(options),
 					path: file,
 					dirname: path.dirname(file),
 					basename: path.basename(file, extName),
@@ -91,10 +98,10 @@ export function parseHeader(bodyParser: { (body: any, file: string, options: any
 			const { header, ...payload } = bodyParser(body, file, options);
 			return {
 				header: {
-					commit: getCommit(options),
 					repository: path.resolve(options.repository ?? '.').replace(/\\/g, '/'),
 					branch: options.branch,
 					cwd: options.cwd,
+					latestCommit: getCommit(options),
 					path: file,
 					dirname: path.dirname(file),
 					basename: path.basename(file, extName),

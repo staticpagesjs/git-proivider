@@ -108,7 +108,7 @@ export class Git {
 
 		return {
 			hash, abbrev, authorName, authorEmail, authorDate, commiterName, commiterEmail, committerDate,
-			message: message.trim(),
+			message: message?.trim(),
 			changes: parseStatus(nameStatus),
 		};
 	}
@@ -125,7 +125,7 @@ export class Git {
 
 			commits.push({
 				hash, abbrev, authorName, authorEmail, authorDate, commiterName, commiterEmail, committerDate,
-				message: message.trim(),
+				message: message?.trim(),
 				changes: parseStatus(nameStatus),
 			});
 		}

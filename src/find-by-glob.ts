@@ -39,10 +39,6 @@ export function* findByGlob({
 
 	const files = git.tree(ncwd, branch).map(x => relative(ncwd, x));
 
-	console.log(ncwd, branch, files);
-	console.log(git.diagnostics());
-
-
 	if (typeof filter === 'function') {
 		for (const file of files) {
 			if (micromatch.isMatch(file, pattern, mmOpts) && filter(file)) yield file;
