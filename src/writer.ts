@@ -54,8 +54,8 @@ export function writer<T extends Record<string, unknown>>({
 	if (typeof onError !== 'function') throw new Error('Argument type mismatch, \'onError\' expects a function.');
 
 	const git = new Git({
+		cwd: repository,
 		env: {
-			GIT_DIR: repository,
 			GIT_AUTHOR_NAME: authorName,
 			GIT_AUTHOR_EMAIL: authorEmail,
 			GIT_COMMITTER_NAME: commiterName,

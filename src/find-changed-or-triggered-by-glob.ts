@@ -78,9 +78,7 @@ export async function* findChangedOrTriggeredByGlob({
 	if (ncwd.startsWith('/')) ncwd = ncwd.substring(1);
 
 	const git = new Git({
-		env: {
-			GIT_DIR: repository,
-		}
+		cwd: repository,
 	});
 
 	const mmOpts = { ignore };

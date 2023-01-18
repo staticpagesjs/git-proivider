@@ -1,17 +1,19 @@
 import * as childProcess from 'child_process';
 
 export class Git {
+	private cwd: string;
 	private env: GitEnv;
 	private config: GitConfig;
 
-	constructor(options: { env?: GitEnv; config?: GitConfig; } = {}) {
+	constructor(options: { cwd?: string; env?: GitEnv; config?: GitConfig; } = {}) {
+		this.cwd = options.cwd ?? '.';
 		this.env = options.env ?? {};
 		this.config = options.config ?? {};
 	}
 
 	exec(command: string[], stdin?: string | NodeJS.ArrayBufferView): Buffer {
 		const config = [];
-		for (const [k, v] of Object.entries(this.config ?? {})) {
+		for (const [k, v] of Object.entries(this.config)) {
 			config.push('-c');
 			config.push(v === true ? k : `${k}=${v}`);
 		}
@@ -19,8 +21,9 @@ export class Git {
 			'git',
 			[...config, ...command],
 			{
-				env: this.env || undefined,
-				input: stdin || undefined,
+				cwd: this.cwd,
+				env: this.env,
+				input: stdin,
 			}
 		).stdout;
 		if (!buf) {
@@ -30,6 +33,30 @@ export class Git {
 			throw new Error(buf.toString());
 		}
 		return buf;
+	}
+
+	diagnostics() {
+		const configStream = this.exec(['config', '-z', '--list', '--show-origin'])
+			.toString()
+			.replace(/^[ \t\r\n\f\0]+|[ \t\r\n\f\0]+$/g, '')
+			.split(/[\0\n]/);
+
+		const effectiveConfig = [];
+		let source;
+		while (source = configStream.shift()) {
+			effectiveConfig.push({ source, key: configStream.shift() as string, value: configStream.shift() as string });
+		}
+
+		return {
+			effectiveConfig: effectiveConfig,
+			config: this.config,
+			env: this.env,
+			isRepository: this.isRepository(),
+			baseDir: this.baseDir(),
+			defaultBranch: this.defaultBranch(),
+			currentBranch: this.currentBranch(),
+			currentCommit: this.currentCommit(),
+		};
 	}
 
 	baseDir() {

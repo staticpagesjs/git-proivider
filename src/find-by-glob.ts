@@ -32,14 +32,16 @@ export function* findByGlob({
 	if (ncwd.startsWith('/')) ncwd = ncwd.substring(1);
 
 	const git = new Git({
-		env: {
-			GIT_DIR: repository,
-		}
+		cwd: repository,
 	});
 
 	const mmOpts = { ignore };
 
 	const files = git.tree(ncwd, branch).map(x => relative(ncwd, x));
+
+	console.log(ncwd, branch, files);
+	console.log(git.diagnostics());
+
 
 	if (typeof filter === 'function') {
 		for (const file of files) {

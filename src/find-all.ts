@@ -27,9 +27,7 @@ export function* findAll({
 	if (ncwd.startsWith('/')) ncwd = ncwd.substring(1);
 
 	const git = new Git({
-		env: {
-			GIT_DIR: repository,
-		}
+		cwd: repository,
 	});
 
 	const files = git.tree(ncwd, branch).map(x => relative(ncwd, x));

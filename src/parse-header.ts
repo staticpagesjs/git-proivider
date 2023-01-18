@@ -28,7 +28,7 @@ type Data<T> = {
 const commits = new WeakMap();
 const getCommit = (opts: any): string => {
 	if (!commits.has(opts)) {
-		const git = new Git({ env: { GIT_DIR: opts.repository } });
+		const git = new Git({ cwd: opts.repository });
 		commits.set(opts, git.commitInfo(opts.branch));
 	}
 	return commits.get(opts);
