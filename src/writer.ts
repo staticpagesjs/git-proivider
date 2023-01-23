@@ -8,20 +8,20 @@ export namespace writer {
 	export type Options<T extends Record<string, unknown>> = {
 		repository?: string;
 		branch?: string;
+		cwd?: string;
 		authorName?: string;
 		authorEmail?: string;
 		commiterName?: string;
 		commiterEmail?: string;
 		message?: string;
-		cwd?: string;
+		commitGroupKey?: string;
 		namer?: { (data: Readonly<T>): string | undefined | void | Promise<string | undefined | void>; } | { (data: Readonly<T>): string | undefined | void | Promise<string | undefined | void>; }[];
 		renderer(data: Readonly<T>): string | NodeJS.ArrayBufferView | undefined | void | Promise<string | NodeJS.ArrayBufferView | undefined | void>;
 		onError?(error: unknown): void;
 	};
 }
 
-let indexPrepared = false;
-let isFileAdded = false;
+const commitGroups = new Map<string, Map<string, string | NodeJS.ArrayBufferView>>();
 
 /**
  * Writes documents to a specified branch of a git repository.
@@ -29,15 +29,16 @@ let isFileAdded = false;
 export function writer<T extends Record<string, unknown>>({
 	repository = '.',
 	branch = 'master',
+	cwd = 'dist',
 	authorName = 'anonymous',
 	authorEmail = 'anonymous@example.com',
 	commiterName = authorName,
 	commiterEmail = authorEmail,
-	message = 'No commit message.',
-	cwd = 'dist',
+	message = 'Not provided',
 	namer = [nameByUrl, nameByHeader, () => { throw new Error('Naming error: could not create an output filename based on .url or .header.path properties.'); }],
 	renderer,
 	onError = error => { console.error(error); },
+	commitGroupKey = `${repository}/${branch}/${authorName}/${commiterName}/${message}`,
 }: writer.Options<T>) {
 	if (!Array.isArray(namer)) namer = [namer];
 
@@ -52,22 +53,7 @@ export function writer<T extends Record<string, unknown>>({
 	if (namer.some(x => typeof x !== 'function')) throw new Error('Argument type mismatch, \'namer\' expects a function or an array of functions.');
 	if (typeof renderer !== 'function') throw new Error('Argument type mismatch, \'renderer\' expects a function.');
 	if (typeof onError !== 'function') throw new Error('Argument type mismatch, \'onError\' expects a function.');
-
-	const git = new Git({
-		cwd: repository,
-		env: {
-			GIT_AUTHOR_NAME: authorName,
-			GIT_AUTHOR_EMAIL: authorEmail,
-			GIT_COMMITTER_NAME: commiterName,
-			GIT_COMMITTER_EMAIL: commiterEmail,
-		}
-	});
-
-	let parentCommit = git.currentCommit(branch);
-	if (!indexPrepared) {
-		git.loadIndex(parentCommit);
-		indexPrepared = true;
-	}
+	if (typeof commitGroupKey !== 'string') throw new Error('Argument type mismatch, \'commitGroupKey\' expects a string.');
 
 	const write = async function (data: T) {
 		try {
@@ -81,28 +67,55 @@ export function writer<T extends Record<string, unknown>>({
 			const rendered = await renderer(data);
 			if (!rendered) return;
 
-			git.writeFile(path.join(cwd, outputPath), rendered);
-			if (!isFileAdded) isFileAdded = true;
+			let commitGroup;
+			if (commitGroups.has(commitGroupKey)) {
+				commitGroup = commitGroups.get(commitGroupKey) as Map<any, any>;
+			} else {
+				commitGroup = new Map();
+				commitGroups.set(commitGroupKey, commitGroup);
+			}
+
+			commitGroup.set(path.join(cwd, outputPath), rendered);
 		} catch (error) {
 			onError(error);
 		}
 	};
 
 	write.teardown = () => {
-		if (indexPrepared) {
-			if (isFileAdded) {
-				git.updateBranch(branch, git.saveIndex(message, parentCommit));
-				isFileAdded = false;
+		const commitGroup = commitGroups.get(commitGroupKey);
+		if (commitGroup) {
+
+			const git = new Git({
+				cwd: repository,
+				env: {
+					GIT_AUTHOR_NAME: authorName,
+					GIT_AUTHOR_EMAIL: authorEmail,
+					GIT_COMMITTER_NAME: commiterName,
+					GIT_COMMITTER_EMAIL: commiterEmail,
+				}
+			});
+
+			const parentCommit = git.currentCommit(branch);
+
+			git.loadIndex(parentCommit);
+			for (const [path, content] of commitGroup.entries()) {
+				git.writeFile(path, content);
 			}
+			const newCommit = git.saveIndex(message, parentCommit);
+			git.updateBranch(branch, newCommit);
+
 			// non-bare repositories index should be set to reflect HEAD
 			// bare repositories does not have an index, so our index does not matter
 			// TODO: no need to reset to HEAD on bare repositories
 			git.loadIndex('HEAD');
-			indexPrepared = false;
 		}
 	};
+}
 
-	return write;
-};
+export function clearPendingCommitGroups() {
+	for (const k of commitGroups.keys()) {
+		commitGroups.delete(k);
+	}
+}
 
 export default writer;
