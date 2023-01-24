@@ -4,7 +4,7 @@ import { Git } from './git.js';
 import { findByGlob } from './find-by-glob.js';
 
 export namespace reader {
-	export type Options<T extends Record<string, unknown>, E extends Record<string, unknown> = findByGlob.Options> = {
+	export type Options<T extends Record<string, unknown>, E extends object = findByGlob.Options> = {
 		repository?: string;
 		branch?: string;
 		cwd?: string;
@@ -17,7 +17,7 @@ export namespace reader {
 /**
  * Reads documents from a specified branch of a git repository.
  */
-export async function* reader<T extends Record<string, unknown>, E extends Record<string, unknown> = findByGlob.Options>(options: reader.Options<T, E>) {
+export async function* reader<T extends Record<string, unknown>, E extends object = findByGlob.Options>(options: reader.Options<T, E>) {
 	const optionsWithDefaults: reader.Options<T, E> = {
 		repository: '.',
 		branch: 'master',

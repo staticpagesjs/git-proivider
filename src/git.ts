@@ -100,14 +100,14 @@ export class Git {
 	}
 
 	commitInfo(ref: string) {
-		const [hash, abbrev, authorName, authorEmail, authorDate, commiterName, commiterEmail, committerDate, message, ...nameStatus] =
+		const [hash, abbrev, authorName, authorEmail, authoredDate, committerName, committerEmail, committedDate, message, ...nameStatus] =
 			this.exec(['log', '-1', '--name-status', '-z', '--encoding=UTF-8', '--pretty=format:%H%x00%h%x00%an%x00%ae%x00%aI%x00%cn%x00%ce%x00%cI%x00%B%x00', ref])
 				.toString()
 				.replace(/^[ \t\r\n\f\0]+|[ \t\r\n\f\0]+$/g, '')
 				.split('\0');
 
 		return {
-			hash, abbrev, authorName, authorEmail, authorDate, commiterName, commiterEmail, committerDate,
+			hash, abbrev, authorName, authorEmail, authoredDate, committerName, committerEmail, committedDate,
 			message: message?.trim(),
 			changes: parseStatus(nameStatus),
 		};

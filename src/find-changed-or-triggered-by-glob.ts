@@ -70,7 +70,7 @@ export async function* findChangedOrTriggeredByGlob({
 	filter,
 	storage,
 	triggers,
-	triggersCwd: triggersSourceCwd = cwd
+	triggersCwd = cwd
 }: findChangedOrTriggeredByGlob.Options) {
 	// normalize cwd
 	let ncwd = normalize(cwd).replace(/\\/g, '/');
@@ -90,7 +90,7 @@ export async function* findChangedOrTriggeredByGlob({
 		const files = git.changedFiles(pastCommit, ncwd, branch)
 			.map(x => relative(ncwd, x));
 
-		const triggeredPatterns = getTriggered(git, branch, triggersSourceCwd, pastCommit, triggers);
+		const triggeredPatterns = getTriggered(git, branch, triggersCwd, pastCommit, triggers);
 
 		if (typeof filter === 'function') {
 			for (const file of files) {
@@ -128,7 +128,6 @@ export async function* findChangedOrTriggeredByGlob({
 			}
 		}
 	}
-
 
 	storage.set(currCommit);
 }

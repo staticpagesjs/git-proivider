@@ -10,17 +10,17 @@ type Data<T> = {
 			abbrev: string;
 			authorName: string;
 			authorEmail: string;
-			authorDate: string;
-			commiterName: string;
-			commiterEmail: string;
-			committerDate: string;
+			authoredDate: string;
+			committerName: string;
+			committerEmail: string;
+			committedDate: string;
 			message: string;
 			changes: {
 				status: string,
 				path: string,
 				srcPath?: string,
 				similarity?: number,
-			};
+			}[];
 		};
 		repository: string;
 		branch: string;
@@ -32,8 +32,8 @@ type Data<T> = {
 	};
 } & T;
 
-const commits = new WeakMap();
-const getCommit = (opts: any): string => {
+const commits = new WeakMap<object, Data<object>['header']['commit']>();
+const getCommit = (opts: Required<reader.Options<Data<any>, Record<string, unknown>>>) => {
 	if (!commits.has(opts)) {
 		const git = new Git({ cwd: opts.repository });
 		commits.set(opts, git.commitInfo(opts.branch));
