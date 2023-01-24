@@ -69,6 +69,7 @@
   },
   "keywords": [
     "static-pages",
+    "git",
     "provider",
     "reader",
     "writer"
